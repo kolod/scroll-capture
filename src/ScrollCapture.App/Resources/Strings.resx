@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App_Name" xml:space="preserve">
+    <value>ScrollCapture</value>
+  </data>
+  <data name="App_Title" xml:space="preserve">
+    <value>ScrollCapture — capture of scrolling windows</value>
+  </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>&amp;Language</value>
+  </data>
+  <data name="Menu_Help" xml:space="preserve">
+    <value>&amp;Help</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>&amp;About ScrollCapture…</value>
+  </data>
+  <data name="Main_Capture" xml:space="preserve">
+    <value>&amp;Capture scrolling window</value>
+  </data>
+  <data name="Main_Hint" xml:space="preserve">
+    <value>Press the button, then click the window whose content you want to capture (or drag to select an area). The program scrolls the window itself and joins the screenshots into one image. Press Esc to stop.</value>
+  </data>
+  <data name="Options_ScrollMethod" xml:space="preserve">
+    <value>Scrolling:</value>
+  </data>
+  <data name="Options_CaptureMethod" xml:space="preserve">
+    <value>Capture:</value>
+  </data>
+  <data name="Options_Delay" xml:space="preserve">
+    <value>Delay after scrolling, ms:</value>
+  </data>
+  <data name="Options_MaxHeight" xml:space="preserve">
+    <value>Maximum height, px:</value>
+  </data>
+  <data name="Options_StartFromTop" xml:space="preserve">
+    <value>Scroll to the top first</value>
+  </data>
+  <data name="Options_AskWhereToSave" xml:space="preserve">
+    <value>Ask where to save after the capture</value>
+  </data>
+  <data name="Options_FitWidth" xml:space="preserve">
+    <value>Fit preview to width</value>
+  </data>
+  <data name="Scroll_Auto" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="Scroll_MouseWheel" xml:space="preserve">
+    <value>Mouse wheel</value>
+  </data>
+  <data name="Scroll_ScrollMessages" xml:space="preserve">
+    <value>Scroll bar messages</value>
+  </data>
+  <data name="Scroll_PageDownKey" xml:space="preserve">
+    <value>Page Down key</value>
+  </data>
+  <data name="Capture_Screen" xml:space="preserve">
+    <value>From the screen</value>
+  </data>
+  <data name="Capture_PrintWindow" xml:space="preserve">
+    <value>Window draws on the program&apos;s canvas</value>
+  </data>
+  <data name="Main_Save" xml:space="preserve">
+    <value>&amp;Save…</value>
+  </data>
+  <data name="Main_Copy" xml:space="preserve">
+    <value>C&amp;opy</value>
+  </data>
+  <data name="Preview_Empty" xml:space="preserve">
+    <value>The captured image will appear here.</value>
+  </data>
+  <data name="Status_Ready" xml:space="preserve">
+    <value>Ready.</value>
+  </data>
+  <data name="Status_Result" xml:space="preserve">
+    <value>{0} × {1} px from {2} screenshots. {3}</value>
+  </data>
+  <data name="Title_Capturing" xml:space="preserve">
+    <value>{0} px, {1} screenshots — Esc stops</value>
+  </data>
+  <data name="Stop_EndReached" xml:space="preserve">
+    <value>The end of the content was reached.</value>
+  </data>
+  <data name="Stop_NotScrollable" xml:space="preserve">
+    <value>The window did not scroll; only one screenshot was taken.</value>
+  </data>
+  <data name="Stop_MaxHeight" xml:space="preserve">
+    <value>The maximum height was reached.</value>
+  </data>
+  <data name="Stop_MaxFrames" xml:space="preserve">
+    <value>The maximum number of screenshots was reached.</value>
+  </data>
+  <data name="Stop_Cancelled" xml:space="preserve">
+    <value>Stopped with Esc.</value>
+  </data>
+  <data name="Stop_AlignmentFailed" xml:space="preserve">
+    <value>A screenshot could not be aligned with the previous one, so the image ends there. Try another scrolling method, a longer delay, or select an area without fixed parts.</value>
+  </data>
+  <data name="Stop_WindowChanged" xml:space="preserve">
+    <value>The window was closed or resized.</value>
+  </data>
+  <data name="Picker_Hint" xml:space="preserve">
+    <value>Click the window to capture, or drag to select an area.  Esc — cancel</value>
+  </data>
+  <data name="Dialog_SaveTitle" xml:space="preserve">
+    <value>Save the image</value>
+  </data>
+  <data name="Dialog_ImageFilter" xml:space="preserve">
+    <value>PNG image (*.png)|*.png|JPEG image (*.jpg)|*.jpg|BMP image (*.bmp)|*.bmp|TIFF image (*.tif)|*.tif</value>
+  </data>
+  <data name="Save_DefaultName" xml:space="preserve">
+    <value>scroll</value>
+  </data>
+  <data name="Save_Saved" xml:space="preserve">
+    <value>Saved: {0}</value>
+  </data>
+  <data name="Copy_Done" xml:space="preserve">
+    <value>Copied to the clipboard.</value>
+  </data>
+  <data name="Error_Unhandled" xml:space="preserve">
+    <value>An unexpected error occurred:
+
+{0}</value>
+  </data>
+  <data name="Error_CaptureFailed" xml:space="preserve">
+    <value>The window could not be captured:
+{0}</value>
+  </data>
+  <data name="Error_Save" xml:space="preserve">
+    <value>The image could not be saved:
+{0}</value>
+  </data>
+  <data name="Error_Copy" xml:space="preserve">
+    <value>The image could not be copied to the clipboard:
+{0}</value>
+  </data>
+  <data name="Error_JpegTooLarge" xml:space="preserve">
+    <value>JPEG images cannot be larger than {0} px. Choose PNG or lower the maximum height.</value>
+  </data>
+  <data name="About_Title" xml:space="preserve">
+    <value>About ScrollCapture</value>
+  </data>
+  <data name="About_Text" xml:space="preserve">
+    <value>Captures the whole content of a scrolling window: scrolls it step by step, takes screenshots and joins them into one image. Fixed toolbars and headers are kept only once.</value>
+  </data>
+  <data name="About_License" xml:space="preserve">
+    <value>This program comes with ABSOLUTELY NO WARRANTY. It is free software under the GNU General Public License version 3 (see the LICENSE file).
+Source code: {0}</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+</root>
