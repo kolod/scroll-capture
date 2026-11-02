@@ -71,7 +71,6 @@ namespace ScrollCapture.App.Capture
         private const int StableChecks = 12;
         private const int StablePollMs = 70;
         private const int TopSearchSteps = 200;
-        private const int TopStepUnits = 20;
 
         private readonly CaptureTarget _target;
         private readonly CaptureOptions _options;
@@ -229,19 +228,29 @@ namespace ScrollCapture.App.Capture
         }
 
         // Scrolls up until the content stops changing.
+        // Jumps to the top where the window supports it, then scrolls up with growing steps
+        // until the content stops changing (for windows that ignore the jump).
         private async Task ScrollToTopAsync(Scroller scroller)
         {
-            var frame = await GrabStableAsync(0);
+            scroller.JumpToTop();
+            var frame = await GrabStableAsync(_options.DelayMs);
+            int units = scroller.TopUnits;
             for (int i = 0; i < TopSearchSteps && !_stopped; i++)
             {
-                scroller.ToTop(TopStepUnits);
+                scroller.Up(units);
                 var next = await GrabStableAsync(_options.DelayMs);
                 if (_stitcher.AreUnchanged(frame, next))
                 {
-                    return;
+                    // A slow window may not have started moving yet: look once more before deciding.
+                    next = await GrabStableAsync(_options.DelayMs * 2 + 300);
+                    if (_stitcher.AreUnchanged(frame, next))
+                    {
+                        return;
+                    }
                 }
 
                 frame = next;
+                units = Math.Min(units * 2, scroller.MaxTopUnits);
             }
         }
 

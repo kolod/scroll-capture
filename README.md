@@ -24,7 +24,7 @@ A compact, portable Windows utility that captures the **whole content of a scrol
 | **Scrolling** | **Automatic** — mouse wheel; if the window does not move, scroll-bar messages, then the Page Down key. **Mouse wheel** — simulated wheel turns with the pointer resting inside the window near its right edge. **Scroll bar messages** — `WM_VSCROLL` line steps sent to the window; the mouse is not touched. **Page Down key** — for programs that ignore the other two. |
 | **Capture** | **From the screen** — copies what is on screen; the window is brought to the front. **Window draws on the program's canvas** — `PrintWindow`: the window renders itself into the program's own bitmap, so it may be covered by other windows. Some programs draw nothing or black this way. |
 | **Delay after scrolling** | Wait before the screenshot (smooth scrolling, content loaded on demand). The program also waits until two screenshots in a row are the same. |
-| **Scroll to the top first** | Start from the beginning of the content instead of the current position. |
+| **Scroll to the top first** | Start from the beginning of the content instead of the current position. The program jumps there where the window allows it (the scroll bar's "top" command, Ctrl+Home), then scrolls up with doubling steps until nothing moves any more. |
 | **Trim the background at the edges** | Cuts away the plain background around the content, keeping 5 px of it (less where the content is closer to an edge). The background color is detected automatically as the most common color along the image edges. Switching the option re-applies it to the last capture. |
 
 The step size adapts: the first step is small, then the program learns how many pixels one
