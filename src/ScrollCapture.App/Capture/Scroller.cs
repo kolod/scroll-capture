@@ -23,10 +23,12 @@ namespace ScrollCapture.App.Capture
     {
         private readonly CaptureTarget _target;
         private readonly Queue<ScrollMethod> _fallbacks = new Queue<ScrollMethod>();
+        private readonly ScrollMethod _requested;
 
         public Scroller(CaptureTarget target, ScrollMethod method)
         {
             _target = target;
+            _requested = method;
             if (method == ScrollMethod.Auto)
             {
                 Method = ScrollMethod.MouseWheel;
@@ -73,21 +75,29 @@ namespace ScrollCapture.App.Capture
             Scroll(units, down: false);
         }
 
-        /// <summary>Jumps to the beginning where the method allows it (else scrolls up by <paramref name="units"/>).</summary>
-        public void ToTop(int units)
+        /// <summary>First step of the way back to the top, in units (see <see cref="MaxTopUnits"/>).</summary>
+        public int TopUnits => Method == ScrollMethod.PageDownKey ? 10 : Method == ScrollMethod.ScrollMessages ? 60 : 20;
+
+        /// <summary>Upward steps double up to this, so even very long content is crossed in a few steps.</summary>
+        public int MaxTopUnits => Method == ScrollMethod.PageDownKey ? 80 : Method == ScrollMethod.ScrollMessages ? 2000 : 320;
+
+        /// <summary>
+        /// Jumps straight to the beginning where the chosen method allows it: the scroll bar's
+        /// "top" command for windows that have one, Ctrl+Home for keyboard scrolling. With
+        /// <see cref="ScrollMethod.Auto"/> both are tried; the wheel alone has no such jump.
+        /// </summary>
+        public void JumpToTop()
         {
-            switch (Method)
+            bool auto = _requested == ScrollMethod.Auto;
+            if ((auto || _requested == ScrollMethod.ScrollMessages) && _target.ScrollBarOwner != IntPtr.Zero)
             {
-                case ScrollMethod.ScrollMessages:
-                    SendScroll(SB_TOP, 1);
-                    break;
-                case ScrollMethod.PageDownKey:
-                    Focus();
-                    Send(Key(VK_CONTROL, false), Key(VK_HOME, true), Key(VK_HOME, true, up: true), Key(VK_CONTROL, false, up: true));
-                    break;
-                default:
-                    Scroll(units, down: false);
-                    break;
+                SendScroll(SB_TOP, 1);
+            }
+
+            if (auto || _requested == ScrollMethod.PageDownKey)
+            {
+                Focus();
+                Send(Key(VK_CONTROL, false), Key(VK_HOME, true), Key(VK_HOME, true, up: true), Key(VK_CONTROL, false, up: true));
             }
         }
 
@@ -118,7 +128,9 @@ namespace ScrollCapture.App.Capture
 
         private void Wheel(int notches)
         {
-            // The wheel goes to the window under the pointer (Windows 10+) or the focused one.
+            // Windows 10+ sends the wheel to the window under the pointer, Windows 7/8 (and 10+
+            // with "Scroll inactive windows" off) to the focused one: point at it and focus it.
+            Focus();
             var point = _target.ScrollPoint;
             SetCursorPos(point.X, point.Y);
             int count = Math.Abs(notches);
