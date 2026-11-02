@@ -13,6 +13,11 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
 
+  <!-- Only to decode test images with the Windows codecs. -->
+  <ItemGroup>
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\ScrollCapture.Core\ScrollCapture.Core.csproj" />
   </ItemGroup>

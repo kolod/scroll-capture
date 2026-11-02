@@ -6,28 +6,30 @@ using System.Threading;
 using System.Windows.Forms;
 using ScrollCapture.App.Capture;
 using ScrollCapture.App.Platform;
+using ScrollCapture.Core.Imaging;
 
 namespace ScrollCapture.App
 {
     /// <summary>
     /// Capture without the window, for scripts:
     /// <c>ScrollCapture.exe (--window HWND | --point X,Y) --out FILE [--scroll METHOD]
-    /// [--capture METHOD] [--delay MS] [--max-height PX] [--no-top] [--frames DIR]</c>.
+    /// [--capture METHOD] [--delay MS] [--max-height PX] [--no-top] [--trim] [--frames DIR]</c>.
     /// Exit code 0 on success, 1 on a capture or save error, 2 on bad arguments.
     /// </summary>
     internal static class CommandLine
     {
         private const string Usage =
             "Usage: ScrollCapture.exe (--window HWND | --point X,Y) --out FILE [--scroll Auto|MouseWheel|ScrollMessages|PageDownKey]\n" +
-            "       [--capture Screen|PrintWindow] [--delay MS] [--max-height PX] [--no-top] [--frames DIR]\n" +
+            "       [--capture Screen|PrintWindow] [--delay MS] [--max-height PX] [--no-top] [--trim] [--frames DIR]\n" +
             "HWND is decimal or 0x-hex; X,Y are physical screen pixels; the format follows the extension (.png .jpg .bmp .tif).\n" +
-            "--frames saves every screenshot to DIR (diagnostics).";
+            "--trim cuts the background at the edges, keeping 5 px around the content; --frames saves every screenshot to DIR (diagnostics).";
 
         public static int Run(string[] args)
         {
             AttachConsole(-1); // print to the console that started us, if any
             IntPtr window = IntPtr.Zero;
             string output = null;
+            bool trim = false;
             var options = new CaptureOptions();
             try
             {
@@ -65,6 +67,9 @@ namespace ScrollCapture.App
                         case "--no-top":
                             options.StartFromTop = false;
                             break;
+                        case "--trim":
+                            trim = true;
+                            break;
                         case "--frames":
                             options.FrameFolder = Path.GetFullPath(Value(args, ref i));
                             break;
@@ -95,10 +100,10 @@ namespace ScrollCapture.App
                 Thread.Sleep(300);
             }
 
-            return RunSession(target, options, output);
+            return RunSession(target, options, output, trim);
         }
 
-        private static int RunSession(CaptureTarget target, CaptureOptions options, string output)
+        private static int RunSession(CaptureTarget target, CaptureOptions options, string output, bool trim)
         {
             int exitCode = 1;
             using (var context = new ApplicationContext())
@@ -111,7 +116,8 @@ namespace ScrollCapture.App
                     try
                     {
                         var result = await new CaptureSession(target, options).RunAsync();
-                        using (var bitmap = FrameGrabber.ToBitmap(result.Image))
+                        var image = trim ? BackgroundTrimmer.Trim(result.Image) : result.Image;
+                        using (var bitmap = new FrameBitmap(image))
                         {
                             var format = ImageFiles.FromExtension(output);
                             if (!ImageFiles.Fits(bitmap, format))
@@ -122,10 +128,10 @@ namespace ScrollCapture.App
                             ImageFiles.Write(bitmap, output, format);
                         }
 
-                        Console.WriteLine("{0}: {1} x {2} px from {3} screenshots ({4}).", output, result.Image.Width, result.Image.Height, result.Frames, result.Reason);
+                        Console.WriteLine("{0}: {1} x {2} px from {3} screenshots ({4}).", output, image.Width, image.Height, result.Frames, result.Reason);
                         exitCode = 0;
                     }
-                    catch (Exception ex) when (CaptureSession.IsCaptureFailure(ex) || ex is IOException || ex is UnauthorizedAccessException)
+                    catch (Exception ex) when (CaptureSession.IsCaptureFailure(ex) || ex is IOException || ex is UnauthorizedAccessException || ex is OutOfMemoryException)
                     {
                         Console.Error.WriteLine(ex.Message);
                     }

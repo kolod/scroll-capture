@@ -42,9 +42,6 @@
   <data name="Options_Delay" xml:space="preserve">
     <value>Delay after scrolling, ms:</value>
   </data>
-  <data name="Options_MaxHeight" xml:space="preserve">
-    <value>Maximum height, px:</value>
-  </data>
   <data name="Options_StartFromTop" xml:space="preserve">
     <value>Scroll to the top first</value>
   </data>
@@ -53,6 +50,9 @@
   </data>
   <data name="Options_FitWidth" xml:space="preserve">
     <value>Fit preview to width</value>
+  </data>
+  <data name="Options_TrimBackground" xml:space="preserve">
+    <value>Trim the background at the edges (keep {0} px)</value>
   </data>
   <data name="Scroll_Auto" xml:space="preserve">
     <value>Automatic</value>
@@ -99,9 +99,6 @@
   <data name="Stop_MaxHeight" xml:space="preserve">
     <value>The maximum height was reached.</value>
   </data>
-  <data name="Stop_MaxFrames" xml:space="preserve">
-    <value>The maximum number of screenshots was reached.</value>
-  </data>
   <data name="Stop_Cancelled" xml:space="preserve">
     <value>Stopped with Esc.</value>
   </data>
@@ -147,7 +144,7 @@
 {0}</value>
   </data>
   <data name="Error_JpegTooLarge" xml:space="preserve">
-    <value>JPEG images cannot be larger than {0} px. Choose PNG or lower the maximum height.</value>
+    <value>JPEG images cannot be larger than {0} px (a Windows limit). Choose PNG, BMP or TIFF.</value>
   </data>
   <data name="About_Title" xml:space="preserve">
     <value>About ScrollCapture</value>
@@ -161,5 +158,14 @@ Source code: {0}</value>
   </data>
   <data name="Common_Ok" xml:space="preserve">
     <value>OK</value>
+  </data>
+  <data name="Stop_SizeLimit" xml:space="preserve">
+    <value>The image reached the largest size the program can hold (500 megapixels).</value>
+  </data>
+  <data name="Stop_OutOfMemory" xml:space="preserve">
+    <value>There was not enough memory to continue; the image ends here.</value>
+  </data>
+  <data name="Save_Saving" xml:space="preserve">
+    <value>Saving…</value>
   </data>
 </root>

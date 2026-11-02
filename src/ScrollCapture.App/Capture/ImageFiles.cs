@@ -1,8 +1,8 @@
 using System;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using ScrollCapture.Core.Imaging;
 
 namespace ScrollCapture.App.Capture
 {
@@ -18,7 +18,7 @@ namespace ScrollCapture.App.Capture
     /// <summary>Writes the captured image in the format the user chose.</summary>
     internal static class ImageFiles
     {
-        /// <summary>GDI+ cannot write JPEG images taller or wider than this.</summary>
+        /// <summary>The Windows JPEG encoder cannot write images taller or wider than this.</summary>
         public const int JpegLimit = 65500;
 
         private const long JpegQuality = 92;
@@ -40,12 +40,24 @@ namespace ScrollCapture.App.Capture
             }
         }
 
-        public static bool Fits(Image image, ImageFileFormat format)
+        public static ImageFileFormat FromFilterIndex(int filterIndex)
+        {
+            var format = (ImageFileFormat)(filterIndex - 1);
+            return Enum.IsDefined(typeof(ImageFileFormat), format) ? format : ImageFileFormat.Png;
+        }
+
+        public static bool Fits(FrameBitmap image, ImageFileFormat format)
         {
             return format != ImageFileFormat.Jpeg || (image.Width <= JpegLimit && image.Height <= JpegLimit);
         }
 
-        public static void Write(Image image, string path, ImageFileFormat format)
+        /// <summary>
+        /// True when the format is written from the pixels alone (our own PNG encoder), so it may
+        /// run on another thread while the bitmap is still shown.
+        /// </summary>
+        public static bool IsThreadSafe(ImageFileFormat format) => format == ImageFileFormat.Png;
+
+        public static void Write(FrameBitmap image, string path, ImageFileFormat format)
         {
             switch (format)
             {
@@ -54,26 +66,21 @@ namespace ScrollCapture.App.Capture
                     using (var parameters = new EncoderParameters(1))
                     {
                         parameters.Param[0] = new EncoderParameter(Encoder.Quality, JpegQuality);
-                        image.Save(path, codec, parameters);
+                        image.Bitmap.Save(path, codec, parameters);
                     }
 
                     break;
                 case ImageFileFormat.Bmp:
-                    image.Save(path, ImageFormat.Bmp);
+                    image.Bitmap.Save(path, ImageFormat.Bmp);
                     break;
                 case ImageFileFormat.Tiff:
-                    image.Save(path, ImageFormat.Tiff);
+                    image.Bitmap.Save(path, ImageFormat.Tiff);
                     break;
                 default:
-                    image.Save(path, ImageFormat.Png);
+                    // The Windows PNG encoder stops at 65 535 rows; ours has no such limit.
+                    PngWriter.Write(image.Frame, path);
                     break;
             }
-        }
-
-        public static ImageFileFormat FromFilterIndex(int filterIndex)
-        {
-            var format = (ImageFileFormat)(filterIndex - 1);
-            return Enum.IsDefined(typeof(ImageFileFormat), format) ? format : ImageFileFormat.Png;
         }
     }
 }

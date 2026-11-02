@@ -48,12 +48,6 @@ namespace ScrollCapture.App.Settings
             set => SetInt("delayMs", value);
         }
 
-        public int MaxHeight
-        {
-            get => GetInt("maxHeight", 30000);
-            set => SetInt("maxHeight", value);
-        }
-
         public bool StartFromTop
         {
             get => GetBool("startFromTop", true);
@@ -64,6 +58,12 @@ namespace ScrollCapture.App.Settings
         {
             get => GetBool("askWhereToSave", true);
             set => SetBool("askWhereToSave", value);
+        }
+
+        public bool TrimBackground
+        {
+            get => GetBool("trimBackground", true);
+            set => SetBool("trimBackground", value);
         }
 
         public bool FitWidth

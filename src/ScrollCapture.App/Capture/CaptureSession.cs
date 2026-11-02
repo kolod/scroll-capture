@@ -13,7 +13,8 @@ namespace ScrollCapture.App.Capture
         EndReached,
         NotScrollable,
         MaxHeight,
-        MaxFrames,
+        SizeLimit,
+        OutOfMemory,
         Cancelled,
         AlignmentFailed,
         WindowChanged
@@ -28,7 +29,8 @@ namespace ScrollCapture.App.Capture
         /// <summary>Wait after each scroll before the first screenshot (smooth scrolling, lazy loading).</summary>
         public int DelayMs { get; set; } = 250;
 
-        public int MaxHeight { get; set; } = 30000;
+        /// <summary>Optional height limit (command line); the image is otherwise limited only by <see cref="CaptureSession.MaxPixels"/>.</summary>
+        public int MaxHeight { get; set; } = int.MaxValue;
 
         public bool StartFromTop { get; set; } = true;
 
@@ -60,7 +62,12 @@ namespace ScrollCapture.App.Capture
     /// </summary>
     internal sealed class CaptureSession
     {
-        private const int MaxFrames = 1000;
+        /// <summary>
+        /// The largest image there can be: one .NET array holds at most 2 GB, 4 bytes per pixel
+        /// (e.g. 1920 × 260 000 px).
+        /// </summary>
+        public const long MaxPixels = 500000000;
+
         private const int StableChecks = 12;
         private const int StablePollMs = 70;
         private const int TopSearchSteps = 200;
@@ -94,12 +101,17 @@ namespace ScrollCapture.App.Capture
             {
                 reason = StopReason.WindowChanged; // keep what was captured before the window went away
             }
+            catch (OutOfMemoryException) when (_stitcher.FrameCount > 0)
+            {
+                reason = StopReason.OutOfMemory; // keep what fits
+            }
             finally
             {
                 NativeMethods.SetCursorPos(cursor.X, cursor.Y);
             }
 
-            var image = await Task.Run(() => _stitcher.Compose(_options.MaxHeight));
+            // Frees the stored rows while copying them: memory for one copy of the image is enough.
+            var image = await Task.Run(() => _stitcher.Compose(_options.MaxHeight, release: true));
             return new CaptureResult(image, _stitcher.FrameCount, reason);
         }
 
@@ -134,9 +146,10 @@ namespace ScrollCapture.App.Capture
                     return StopReason.MaxHeight;
                 }
 
-                if (_stitcher.FrameCount >= MaxFrames)
+                // A step adds at most one screenshot's height.
+                if ((long)(_stitcher.Height + first.Height) * _stitcher.Width > MaxPixels)
                 {
-                    return StopReason.MaxFrames;
+                    return StopReason.SizeLimit;
                 }
 
                 if (!NativeMethods.IsWindow(_target.Window))

@@ -142,8 +142,12 @@ namespace ScrollCapture.Core.Stitching
             return Unchanged(Signatures(previous), Signatures(next));
         }
 
-        /// <summary>The joined image, cut at <paramref name="maxHeight"/> rows when given.</summary>
-        public PixelFrame Compose(int maxHeight = int.MaxValue)
+        /// <summary>
+        /// The joined image, cut at <paramref name="maxHeight"/> rows when given. With
+        /// <paramref name="release"/> the stored rows are freed while they are copied, so a tall
+        /// image needs memory for one copy only; the stitcher cannot be used afterwards.
+        /// </summary>
+        public PixelFrame Compose(int maxHeight = int.MaxValue, bool release = false)
         {
             if (_last == null)
             {
@@ -154,11 +158,22 @@ namespace ScrollCapture.Core.Stitching
             int height = Math.Min(Height, Math.Max(1, maxHeight));
             var pixels = new int[checked(width * height)];
             int offset = 0;
-            foreach (var strip in _strips)
+            for (int i = 0; i < _strips.Count; i++)
             {
+                var strip = _strips[i];
                 int length = Math.Min(strip.Length, pixels.Length - offset);
                 Array.Copy(strip, 0, pixels, offset, length);
                 offset += length;
+                if (release)
+                {
+                    _strips[i] = null;
+                }
+            }
+
+            if (release)
+            {
+                _strips.Clear();
+                _committedRows = 0;
             }
 
             int footerTop = Math.Max(0, _end);
