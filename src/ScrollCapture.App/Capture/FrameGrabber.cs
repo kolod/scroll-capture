@@ -19,6 +19,47 @@ namespace ScrollCapture.App.Capture
         PrintWindow
     }
 
+    /// <summary>
+    /// A GDI+ bitmap that shows the pixels of a frame without copying them: the frame's array is
+    /// pinned and used as the bitmap memory, so a tall capture is held in memory only once.
+    /// </summary>
+    internal sealed class FrameBitmap : IDisposable
+    {
+        private GCHandle _pin;
+
+        public FrameBitmap(PixelFrame frame)
+        {
+            Frame = frame;
+            _pin = GCHandle.Alloc(frame.Pixels, GCHandleType.Pinned);
+            try
+            {
+                Bitmap = new Bitmap(frame.Width, frame.Height, frame.Width * 4, PixelFormat.Format32bppRgb, _pin.AddrOfPinnedObject());
+            }
+            catch
+            {
+                _pin.Free();
+                throw;
+            }
+        }
+
+        public PixelFrame Frame { get; }
+
+        public Bitmap Bitmap { get; }
+
+        public int Width => Frame.Width;
+
+        public int Height => Frame.Height;
+
+        public void Dispose()
+        {
+            Bitmap.Dispose();
+            if (_pin.IsAllocated)
+            {
+                _pin.Free();
+            }
+        }
+    }
+
     /// <summary>Takes one screenshot of the target area and converts between frames and bitmaps.</summary>
     internal static class FrameGrabber
     {

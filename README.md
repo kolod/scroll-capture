@@ -24,8 +24,8 @@ A compact, portable Windows utility that captures the **whole content of a scrol
 | **Scrolling** | **Automatic** — mouse wheel; if the window does not move, scroll-bar messages, then the Page Down key. **Mouse wheel** — simulated wheel turns with the pointer resting inside the window near its right edge. **Scroll bar messages** — `WM_VSCROLL` line steps sent to the window; the mouse is not touched. **Page Down key** — for programs that ignore the other two. |
 | **Capture** | **From the screen** — copies what is on screen; the window is brought to the front. **Window draws on the program's canvas** — `PrintWindow`: the window renders itself into the program's own bitmap, so it may be covered by other windows. Some programs draw nothing or black this way. |
 | **Delay after scrolling** | Wait before the screenshot (smooth scrolling, content loaded on demand). The program also waits until two screenshots in a row are the same. |
-| **Maximum height** | The capture stops at this height (up to 65 000 px). |
 | **Scroll to the top first** | Start from the beginning of the content instead of the current position. |
+| **Trim the background at the edges** | Cuts away the plain background around the content, keeping 5 px of it (less where the content is closer to an edge). The background color is detected automatically as the most common color along the image edges. Switching the option re-applies it to the last capture. |
 
 The step size adapts: the first step is small, then the program learns how many pixels one
 wheel notch or line moves and aims at about 60% of the visible height per step, so
@@ -39,14 +39,21 @@ Without arguments the window opens. With arguments a capture runs without it:
 ScrollCapture.exe (--window HWND | --point X,Y) --out FILE
                   [--scroll Auto|MouseWheel|ScrollMessages|PageDownKey]
                   [--capture Screen|PrintWindow] [--delay MS] [--max-height PX]
-                  [--no-top] [--frames DIR]
+                  [--no-top] [--trim] [--frames DIR]
 ```
 
 `HWND` is decimal or `0x` hex, `X,Y` are physical screen pixels, the format follows the
-extension of `FILE`. `--frames DIR` saves every screenshot for diagnostics. Exit code 0 on
+extension of `FILE`. `--max-height` stops the capture at that height (no limit by default).
+`--trim` cuts the background at the edges as the option above does.
+`--frames DIR` saves every screenshot for diagnostics. Exit code 0 on
 success, 1 on a capture or save error, 2 on bad arguments.
 
 ## Limitations
+
+- There is no height limit of its own. An image can hold up to 500 megapixels (one .NET array
+  of 2 GB; for example 1920 × 260 000 px); the capture stops there, or earlier when memory runs
+  out, and keeps what it has. PNG has no further limit (the program has its own encoder), BMP and
+  TIFF neither; JPEG cannot exceed 65 500 px on a side (a Windows limit).
 
 - Do not move the mouse or type while the wheel or Page Down method runs: the input goes to
   the window under the pointer or with the focus.

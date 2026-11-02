@@ -25,6 +25,9 @@ namespace ScrollCapture.App.Platform
 
         public const int SW_RESTORE = 9;
 
+        public const uint SMTO_ABORTIFHUNG = 0x0002;
+        public const uint MessageTimeoutMs = 1000;
+
         public const uint INPUT_MOUSE = 0;
         public const uint INPUT_KEYBOARD = 1;
         public const uint MOUSEEVENTF_WHEEL = 0x0800;
@@ -180,6 +183,9 @@ namespace ScrollCapture.App.Platform
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool PostMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SendMessageTimeout(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, uint flags, uint timeoutMs, out IntPtr result);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]

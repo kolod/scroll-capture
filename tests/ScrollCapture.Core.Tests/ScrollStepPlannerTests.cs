@@ -44,5 +44,30 @@ namespace ScrollCapture.Core.Tests
             Assert.Equal(20, planner.Next(1000));
             Assert.False(planner.TooFar(1));
         }
+
+        [Fact]
+        public void GoodSteps_RelaxTheLimitAgain()
+        {
+            var planner = new ScrollStepPlanner(1, 40);
+            planner.Record(1, 10);
+            planner.TooFar(40);
+            planner.TooFar(20);
+            planner.TooFar(10);
+            planner.TooFar(5);
+            Assert.Equal(2, planner.Next(1000));
+
+            for (int i = 0; i < 3; i++)
+            {
+                planner.Record(2, 20);
+            }
+
+            Assert.Equal(4, planner.Next(1000));
+            for (int i = 0; i < 12; i++)
+            {
+                planner.Record(4, 40);
+            }
+
+            Assert.Equal(40, planner.Next(1000)); // back to the full step
+        }
     }
 }

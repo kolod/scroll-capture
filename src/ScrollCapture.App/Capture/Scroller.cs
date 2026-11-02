@@ -79,7 +79,7 @@ namespace ScrollCapture.App.Capture
             switch (Method)
             {
                 case ScrollMethod.ScrollMessages:
-                    PostScroll(SB_TOP, 1);
+                    SendScroll(SB_TOP, 1);
                     break;
                 case ScrollMethod.PageDownKey:
                     Focus();
@@ -96,7 +96,7 @@ namespace ScrollCapture.App.Capture
             switch (Method)
             {
                 case ScrollMethod.ScrollMessages:
-                    PostScroll(down ? SB_LINEDOWN : SB_LINEUP, units);
+                    SendScroll(down ? SB_LINEDOWN : SB_LINEUP, units);
                     break;
                 case ScrollMethod.PageDownKey:
                     Focus();
@@ -133,15 +133,25 @@ namespace ScrollCapture.App.Capture
             Send(inputs);
         }
 
-        private void PostScroll(int code, int count)
+        // Sent, not posted: the call returns when the window has scrolled, so the next screenshot
+        // never shows a half-done step. A hung window cannot block us for longer than the timeout.
+        private void SendScroll(int code, int count)
         {
             var owner = _target.ScrollBarOwner != IntPtr.Zero ? _target.ScrollBarOwner : _target.Window;
             for (int i = 0; i < count; i++)
             {
-                PostMessage(owner, WM_VSCROLL, (IntPtr)code, IntPtr.Zero);
+                if (!Send(owner, code))
+                {
+                    return;
+                }
             }
 
-            PostMessage(owner, WM_VSCROLL, (IntPtr)SB_ENDSCROLL, IntPtr.Zero);
+            Send(owner, SB_ENDSCROLL);
+        }
+
+        private static bool Send(IntPtr window, int code)
+        {
+            return SendMessageTimeout(window, WM_VSCROLL, (IntPtr)code, IntPtr.Zero, SMTO_ABORTIFHUNG, MessageTimeoutMs, out _) != IntPtr.Zero;
         }
 
         // Keys go to the focused window of the foreground thread: focus the target first.

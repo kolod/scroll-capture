@@ -42,9 +42,6 @@
   <data name="Options_Delay" xml:space="preserve">
     <value>Затримка після прокрутки, мс:</value>
   </data>
-  <data name="Options_MaxHeight" xml:space="preserve">
-    <value>Максимальна висота, пікс.:</value>
-  </data>
   <data name="Options_StartFromTop" xml:space="preserve">
     <value>Спершу прокрутити на початок</value>
   </data>
@@ -53,6 +50,9 @@
   </data>
   <data name="Options_FitWidth" xml:space="preserve">
     <value>Перегляд за шириною</value>
+  </data>
+  <data name="Options_TrimBackground" xml:space="preserve">
+    <value>Обрізати фон по краях (залишати {0} пікс.)</value>
   </data>
   <data name="Scroll_Auto" xml:space="preserve">
     <value>Автоматично</value>
@@ -99,9 +99,6 @@
   <data name="Stop_MaxHeight" xml:space="preserve">
     <value>Досягнуто максимальної висоти.</value>
   </data>
-  <data name="Stop_MaxFrames" xml:space="preserve">
-    <value>Досягнуто максимальної кількості знімків.</value>
-  </data>
   <data name="Stop_Cancelled" xml:space="preserve">
     <value>Зупинено клавішею Esc.</value>
   </data>
@@ -147,7 +144,7 @@
 {0}</value>
   </data>
   <data name="Error_JpegTooLarge" xml:space="preserve">
-    <value>Зображення JPEG не може перевищувати {0} пікс. Виберіть PNG або зменште максимальну висоту.</value>
+    <value>Зображення JPEG не може перевищувати {0} пікс. (обмеження Windows). Виберіть PNG, BMP або TIFF.</value>
   </data>
   <data name="About_Title" xml:space="preserve">
     <value>Про ScrollCapture</value>
@@ -161,5 +158,14 @@
   </data>
   <data name="Common_Ok" xml:space="preserve">
     <value>OK</value>
+  </data>
+  <data name="Stop_SizeLimit" xml:space="preserve">
+    <value>Зображення досягло найбільшого розміру, який може вмістити програма (500 мегапікселів).</value>
+  </data>
+  <data name="Stop_OutOfMemory" xml:space="preserve">
+    <value>Не вистачило памʼяті, щоб продовжити; зображення закінчується тут.</value>
+  </data>
+  <data name="Save_Saving" xml:space="preserve">
+    <value>Збереження…</value>
   </data>
 </root>

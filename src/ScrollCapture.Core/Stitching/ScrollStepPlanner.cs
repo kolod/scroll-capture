@@ -9,11 +9,14 @@ namespace ScrollCapture.Core.Stitching
     /// </summary>
     public sealed class ScrollStepPlanner
     {
+        private const int StepsToRelax = 3;
+
         private readonly int _maxUnits;
         private readonly double _targetShare;
         private long _measuredPixels;
         private long _measuredUnits;
         private int _limit;
+        private int _goodSteps;
 
         public ScrollStepPlanner(int initialUnits, int maxUnits, double targetShare = 0.6)
         {
@@ -53,13 +56,23 @@ namespace ScrollCapture.Core.Stitching
             return perUnit.HasValue ? (int?)Math.Max(1, (int)Math.Round(perUnit.Value * units)) : null;
         }
 
-        /// <summary>Records a step that moved the content by <paramref name="shift"/> rows.</summary>
+        /// <summary>
+        /// Records a step that moved the content by <paramref name="shift"/> rows. After a few
+        /// good steps in a row a limit set by <see cref="TooFar"/> is relaxed again, so one
+        /// glitch does not slow down the rest of a long capture.
+        /// </summary>
         public void Record(int units, int shift)
         {
             if (units > 0 && shift > 0)
             {
                 _measuredUnits += units;
                 _measuredPixels += shift;
+            }
+
+            if (_limit < _maxUnits && ++_goodSteps >= StepsToRelax)
+            {
+                _limit = Math.Min(_maxUnits, _limit * 2);
+                _goodSteps = 0;
             }
         }
 
@@ -75,6 +88,7 @@ namespace ScrollCapture.Core.Stitching
             }
 
             _limit = Math.Max(1, units / 2);
+            _goodSteps = 0;
             return true;
         }
     }

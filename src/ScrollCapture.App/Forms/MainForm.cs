@@ -8,6 +8,7 @@ using ScrollCapture.App.Capture;
 using ScrollCapture.App.Localization;
 using ScrollCapture.App.Platform;
 using ScrollCapture.App.Settings;
+using ScrollCapture.Core.Imaging;
 using ScrollCapture.Core.Stitching;
 
 namespace ScrollCapture.App.Forms
@@ -28,17 +29,16 @@ namespace ScrollCapture.App.Forms
         private readonly ComboBox _captureMethod = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 250 };
         private readonly Label _delayLabel = Ui.FieldLabel();
         private readonly NumericUpDown _delay = new NumericUpDown { Minimum = 0, Maximum = 5000, Increment = 50, Width = 70 };
-        private readonly Label _maxHeightLabel = Ui.FieldLabel();
-        private readonly NumericUpDown _maxHeight = new NumericUpDown { Minimum = 1000, Maximum = 65000, Increment = 1000, Width = 80 };
         private readonly CheckBox _startFromTop = new CheckBox { AutoSize = true, Margin = new Padding(3, 6, 12, 3) };
         private readonly CheckBox _askWhereToSave = new CheckBox { AutoSize = true, Margin = new Padding(3, 6, 12, 3) };
         private readonly CheckBox _fitWidth = new CheckBox { AutoSize = true, Margin = new Padding(3, 6, 12, 3) };
+        private readonly CheckBox _trimBackground = new CheckBox { AutoSize = true, Margin = new Padding(3, 6, 12, 3) };
         private readonly ImagePreview _preview = new ImagePreview { Dock = DockStyle.Fill };
         private readonly Label _status = new Label { AutoSize = true, Margin = new Padding(3, 9, 3, 3) };
         private readonly Button _save = Ui.Button();
         private readonly Button _copy = Ui.Button();
         private TaskbarProgress _taskbar;
-        private Bitmap _result;
+        private FrameBitmap _result;
         private CaptureResult _lastCapture;
         private bool _busy;
 
@@ -81,12 +81,12 @@ namespace ScrollCapture.App.Forms
 
             var options = Ui.Flow();
             options.Margin = new Padding(0, 6, 0, 0);
-            options.Controls.AddRange(new Control[] { _scrollLabel, _scrollMethod, _captureLabel, _captureMethod, _delayLabel, _delay, _maxHeightLabel, _maxHeight });
+            options.Controls.AddRange(new Control[] { _scrollLabel, _scrollMethod, _captureLabel, _captureMethod, _delayLabel, _delay });
             top.Controls.Add(options, 0, 1);
             top.SetColumnSpan(options, 2);
 
             var checks = Ui.Flow();
-            checks.Controls.AddRange(new Control[] { _startFromTop, _askWhereToSave, _fitWidth });
+            checks.Controls.AddRange(new Control[] { _startFromTop, _trimBackground, _askWhereToSave, _fitWidth });
             top.Controls.Add(checks, 0, 2);
             top.SetColumnSpan(checks, 2);
 
@@ -110,12 +110,19 @@ namespace ScrollCapture.App.Forms
             MainMenuStrip = _menu;
 
             _delay.Value = Clamp(settings.DelayMs, _delay);
-            _maxHeight.Value = Clamp(settings.MaxHeight, _maxHeight);
             _startFromTop.Checked = settings.StartFromTop;
             _askWhereToSave.Checked = settings.AskWhereToSave;
             _fitWidth.Checked = settings.FitWidth;
             _preview.FitWidth = settings.FitWidth;
             _fitWidth.CheckedChanged += (s, e) => _preview.FitWidth = _fitWidth.Checked;
+            _trimBackground.Checked = settings.TrimBackground;
+            _trimBackground.CheckedChanged += (s, e) =>
+            {
+                if (_lastCapture != null && !_busy)
+                {
+                    ShowResult(_lastCapture);
+                }
+            };
 
             LanguageService.LanguageChanged += OnLanguageChanged;
             ApplyStrings();
@@ -140,10 +147,10 @@ namespace ScrollCapture.App.Forms
             _scrollLabel.Text = Strings.Get("Options_ScrollMethod");
             _captureLabel.Text = Strings.Get("Options_CaptureMethod");
             _delayLabel.Text = Strings.Get("Options_Delay");
-            _maxHeightLabel.Text = Strings.Get("Options_MaxHeight");
             _startFromTop.Text = Strings.Get("Options_StartFromTop");
             _askWhereToSave.Text = Strings.Get("Options_AskWhereToSave");
             _fitWidth.Text = Strings.Get("Options_FitWidth");
+            _trimBackground.Text = Strings.Format("Options_TrimBackground", BackgroundTrimmer.DefaultMargin);
             _save.Text = Strings.Get("Main_Save");
             _copy.Text = Strings.Get("Main_Copy");
             _preview.EmptyText = Strings.Get("Preview_Empty");
@@ -256,10 +263,10 @@ namespace ScrollCapture.App.Forms
             _settings.ScrollMethod = Selected<ScrollMethod>(_scrollMethod).ToString();
             _settings.CaptureMethod = Selected<CaptureMethod>(_captureMethod).ToString();
             _settings.DelayMs = (int)_delay.Value;
-            _settings.MaxHeight = (int)_maxHeight.Value;
             _settings.StartFromTop = _startFromTop.Checked;
             _settings.AskWhereToSave = _askWhereToSave.Checked;
             _settings.FitWidth = _fitWidth.Checked;
+            _settings.TrimBackground = _trimBackground.Checked;
         }
 
         private CaptureOptions ReadOptions()
@@ -269,7 +276,6 @@ namespace ScrollCapture.App.Forms
                 ScrollMethod = Selected<ScrollMethod>(_scrollMethod),
                 CaptureMethod = Selected<CaptureMethod>(_captureMethod),
                 DelayMs = (int)_delay.Value,
-                MaxHeight = (int)_maxHeight.Value,
                 StartFromTop = _startFromTop.Checked,
                 Stitch = new StitchOptions { IgnoreRightColumns = Math.Max(24, 24 * DeviceDpi / 96) }
             };
@@ -312,7 +318,7 @@ namespace ScrollCapture.App.Forms
                 {
                     result = await session.RunAsync();
                 }
-                catch (Exception ex) when (CaptureSession.IsCaptureFailure(ex))
+                catch (Exception ex) when (CaptureSession.IsCaptureFailure(ex) || ex is OutOfMemoryException)
                 {
                     error = ex;
                 }
@@ -344,10 +350,21 @@ namespace ScrollCapture.App.Forms
             }
         }
 
+        // Shows the capture, trimmed or not; the untrimmed image is kept so the option can be switched afterwards.
         private void ShowResult(CaptureResult capture)
         {
-            var bitmap = FrameGrabber.ToBitmap(capture.Image);
-            _preview.Image = bitmap;
+            PixelFrame image;
+            try
+            {
+                image = _trimBackground.Checked ? BackgroundTrimmer.Trim(capture.Image) : capture.Image;
+            }
+            catch (OutOfMemoryException)
+            {
+                image = capture.Image; // no room for a trimmed copy: show the whole capture
+            }
+
+            var bitmap = new FrameBitmap(image);
+            _preview.Image = bitmap.Bitmap;
             _result?.Dispose();
             _result = bitmap;
             _lastCapture = capture;
@@ -355,9 +372,9 @@ namespace ScrollCapture.App.Forms
             UpdateButtons();
         }
 
-        private static string ResultText(CaptureResult capture)
+        private string ResultText(CaptureResult capture)
         {
-            return Strings.Format("Status_Result", capture.Image.Width, capture.Image.Height, capture.Frames, Strings.Get("Stop_" + capture.Reason));
+            return Strings.Format("Status_Result", _result.Width, _result.Height, capture.Frames, Strings.Get("Stop_" + capture.Reason));
         }
 
         private void UpdateButtons()
@@ -367,7 +384,7 @@ namespace ScrollCapture.App.Forms
             _copy.Enabled = !_busy && _result != null;
         }
 
-        private void Save()
+        private async void Save()
         {
             if (_result == null)
             {
@@ -397,21 +414,39 @@ namespace ScrollCapture.App.Forms
                     return;
                 }
 
+                var image = _result;
+                var path = dialog.FileName;
+                _busy = true;
+                UpdateButtons();
                 UseWaitCursor = true;
+                _status.Text = ResultText(_lastCapture) + "  " + Strings.Get("Save_Saving");
                 try
                 {
-                    ImageFiles.Write(_result, dialog.FileName, format);
-                    _settings.LastFolder = Path.GetDirectoryName(dialog.FileName);
+                    // PNG of a tall capture takes a while: our encoder reads only the pixels, so it
+                    // runs in the background. GDI+ formats use the bitmap the preview draws from.
+                    if (ImageFiles.IsThreadSafe(format))
+                    {
+                        await Task.Run(() => ImageFiles.Write(image, path, format));
+                    }
+                    else
+                    {
+                        ImageFiles.Write(image, path, format);
+                    }
+
+                    _settings.LastFolder = Path.GetDirectoryName(path);
                     _settings.LastFormat = dialog.FilterIndex;
-                    _status.Text = ResultText(_lastCapture) + "  " + Strings.Format("Save_Saved", dialog.FileName);
+                    _status.Text = ResultText(_lastCapture) + "  " + Strings.Format("Save_Saved", path);
                 }
-                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ExternalException)
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ExternalException || ex is OutOfMemoryException)
                 {
+                    _status.Text = ResultText(_lastCapture);
                     MessageBox.Show(this, Strings.Format("Error_Save", ex.Message), Strings.Get("App_Name"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {
                     UseWaitCursor = false;
+                    _busy = false;
+                    UpdateButtons();
                 }
             }
         }
@@ -425,10 +460,10 @@ namespace ScrollCapture.App.Forms
 
             try
             {
-                Clipboard.SetImage(_result);
+                Clipboard.SetImage(_result.Bitmap);
                 _status.Text = ResultText(_lastCapture) + "  " + Strings.Get("Copy_Done");
             }
-            catch (ExternalException ex)
+            catch (Exception ex) when (ex is ExternalException || ex is OutOfMemoryException)
             {
                 MessageBox.Show(this, Strings.Format("Error_Copy", ex.Message), Strings.Get("App_Name"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
